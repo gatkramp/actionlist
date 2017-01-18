@@ -9,6 +9,11 @@ function idtouser($id){
 	return $res['alias'];	
 }
 
+function proIdtoDesc($id){
+    $res = mysql_fetch_assoc(mysql_query('select description from project where id='.$id));
+    return $res['description'];
+}
+
 if (isset($_POST['project'])){
 	mysql_query('insert into task (project,description,user_id,findings) values ('.$_POST['project'].',"'.$_POST['description'].'",'.$_POST['userid'].',"None")');
 	header("location: index.php");
@@ -75,8 +80,8 @@ if(isset($_SESSION['login_user'])){
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
             <li ><a href="index.php">Home</a></li>
-            <li class="active"><a href="add.php">Add Project</a></li>
-            <li><a href="kanboard.php">Kanboard</a></li>
+            <li ><a href="add.php">Add Project</a></li>
+            <li class="active"><a href="kanboard.php">Kanboard</a></li>
 			<li><a href="logout.php">Logout</a></li>
 
           </ul>
@@ -84,38 +89,45 @@ if(isset($_SESSION['login_user'])){
       </div>
     </nav>
 
-    <div class="container theme-showcase" role="main">';
+    <div class="container theme-showcase" role="main">
+    <table class="table table-bordered">
+        <tr><th class="col-lg-4">Open Projects</th>
+            <th class="col-lg-4">In Progress</th>
+            <th class="col-lg-4">Finished Projects</th>
+        </tr>';
+        $html .='<tr><td>';
+        $tsk = mysql_query('select * from task where comp = 2000000000 and busy = 0');
+        while($line = mysql_fetch_assoc($tsk)){
+            $proj = proIdtoDesc($line['project']);
+            if (strlen($proj) > 1)
+                $html .= '<div class="panel panel-default"><div class="panel-body"><span class="label label-danger">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span></div></div>';
+        }  
+            $html .='</td>';
+        
+        $html .='<td>';
+        $tsk = mysql_query('select * from task where comp = 2000000000 and busy = 1');
+        while($line = mysql_fetch_assoc($tsk)){
+            $proj = proIdtoDesc($line['project']);
+            if (strlen($proj) > 1)
+            $html .= '<div class="panel panel-default"><div class="panel-body"><span class="label label-warning">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span></div></div>';
+        }  
+            $html .='</td>';
+        
+
+        $html .='<td>';
+        $tsk = mysql_query('select * from task where comp <> 2000000000');
+        while($line = mysql_fetch_assoc($tsk)){
+            $proj = proIdtoDesc($line['project']);
+            if (strlen($proj) > 1)
+            $html .= '<div class="panel panel-default"><div class="panel-body"><span class="label label-success">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span></small></div></div>';
+        }  
+            $html .='</td>
+                        
+        </tr>
+    </table>
 	
-	if (isset($_GET['tsk'])){
-	$html .= '<div class="jumbotron" align="center">
-        <h1>New Task</h1>';
-	$ref = mysql_fetch_assoc(mysql_query('select * from project where id='.$_GET['tsk']));
-	$html .= '<h4>For: '.$ref['description'].'</h4>';
-    $html .= '<form action="add.php" method="post"><br>
-			<h4>Please add a description for the task:</h4>
-			<textarea name="description" cols="100" rows="10"></textarea><br>
-			<br><h4>Who will be responsible for the task?</h4>
-			<select name="userid">
-				<option value="1">Frik van der Merwe</option>
-				<option value="2">Josh Letlhoo</option>
-			</select>
-			<input type="hidden" name="project" value="'.$_GET['tsk'].'">
-			<br><h4>Click on "Submit" when done.</h4><input type="submit"></input>
-		</form>
-		
       </div>';
-		
-	} else {
 	
-	$html .= '<div class="jumbotron" align="center">
-        <h1>New Project</h1>
-        <form action="add.php" method="post"><h4>Please type a descriptive name for the project:</h4><br>
-			<input size="80" name="prjname" type="text"></input>
-			<input type="submit"></input>
-		</form>
-		<h4>Click on "Submit" when done.</h4>
-      </div>';
-	}
 
 	  
 
