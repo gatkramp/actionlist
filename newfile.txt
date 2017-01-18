@@ -1,0 +1,36 @@
+{
+    "name": "Demil",
+    "children": [{
+        "name": "Grenades HE",
+        "children": [{
+            "name": "Define Work to be done for the project at hand during the demil process",
+            "children": [{
+                "name": "Wbs"
+            }, {
+                "name": "SOq"
+            }, {
+                "name": "HierarchicalCluster"
+            }, {
+                "name": "MergeEdge"
+            }]
+        }, {
+            "name": "Do Work",
+            "children": [{
+                "name": "BetweennessCentrality"
+            }, {
+                "name": "LinkDistance"
+            }, {
+                "name": "MaxFlowMinCut"
+            }, {
+                "name": "ShortestPaths"
+            }, {
+                "name": "SpanningTree"
+            }]
+        }, {
+            "name": "Excecute Work",
+            "children": [{
+                "name": "AspectRatioBanker"
+            }]
+        }]
+    }]
+}";
