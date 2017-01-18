@@ -159,7 +159,7 @@ if(isset($_SESSION['login_user'])){
           <ul class="nav navbar-nav">
             <li class="active"><a href="index.php">Home</a></li>
             <li><a href="add.php">Add Project</a></li>
-            <li><a href="report.php">Progress Report</a></li>
+            <li><a href="kanboard.php">Kanboard</a></li>
             <li><a href="mindmap.php">Mindmap</a></li>
 			<li><a href="logout.php">Logout</a></li>
 
