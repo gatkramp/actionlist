@@ -110,7 +110,7 @@ if(isset($_SESSION['login_user'])){
             <th class="col-lg-4">Finished Projects</th>
         </tr>';
         $html .='<tr><td><table class="table">';
-        $tsk = mysql_query('select * from task where comp = 2000000000 and busy = 0');
+        $tsk = mysql_query('select task.id,task.findings,task.description,task.project from task inner join project on task.project=project.id where comp = 2000000000 and busy = 0 order by project.prio');
         while($line = mysql_fetch_assoc($tsk)){
             $proj = proIdtoDesc($line['project']);
             if (strlen($proj) > 1)
@@ -124,11 +124,11 @@ if(isset($_SESSION['login_user'])){
             $html .='</table></td>';
         
         $html .='<td><table class="table">';
-        $tsk = mysql_query('select * from task where comp = 2000000000 and busy = 1');
+        $tsk = mysql_query('select task.id,task.findings,task.description,task.project from task inner join project on task.project=project.id where  comp = 2000000000 and busy = 1 order by project.prio');
         while($line = mysql_fetch_assoc($tsk)){
             $proj = proIdtoDesc($line['project']);
             if (strlen($proj) > 1)
-            $html .= '<tr><td><span class="label label-warning">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span><br>'
+            $html .= '<tr><td><span class="label label-warning" data-toggle="tooltip" data-placement="top" title="'.$line['findings'].'">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span><br>'
                     . '<a href="kanboard.php?deltc='.$line['id'].'"><button class="btn btn-xs btn-danger">Delete</button></a> '
                     . '<a href="edit.php?tske='.$line['id'].'"><button class="btn btn-xs btn-warning">Edit</button></a> '
                     . '<a href="edit.php?fnde='.$line['id'].'"><button class="btn btn-xs btn-info">Description</button></a> '
@@ -138,11 +138,12 @@ if(isset($_SESSION['login_user'])){
         
 
         $html .='<td><table class="table">';
-        $tsk = mysql_query('select * from task where comp <> 2000000000');
+        $tsk = mysql_query('select task.id,task.findings,task.description,task.project,task.comp from task inner join project on task.project=project.id where comp <> 2000000000 order by task.comp desc');
         while($line = mysql_fetch_assoc($tsk)){
             $proj = proIdtoDesc($line['project']);
             if (strlen($proj) > 1)
-            $html .= '<tr><td><span class="label label-success">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span><br>'
+            $html .= '<tr><td><span class="label label-success" data-toggle="tooltip" data-placement="top" title="'.$line['findings'].'">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span>'
+                    . '<br><span class="label label-info">Completed: '.date('Y-m-d h:i:s',$line['comp']+3600).'</span><br>'
                     . '<a href="kanboard.php?deltc='.$line['id'].'"><button class="btn btn-xs btn-danger">Delete</button></a> '
                     . '<a href="edit.php?tske='.$line['id'].'"><button class="btn btn-xs btn-warning">Edit</button></a> '
                     . '<a href="edit.php?fnde='.$line['id'].'"><button class="btn btn-xs btn-info">Description</button></a> '
