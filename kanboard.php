@@ -19,6 +19,18 @@ if (isset($_POST['project'])){
 	header("location: index.php");
 }
 
+if (isset($_GET['deltc']))
+	mysql_query('delete from task where id='.$_GET['deltc']);
+
+if (isset($_GET['dn'])){
+	mysql_query('update task set comp='.time().' where id='.$_GET['dn']);
+	
+}
+
+if (isset($_GET['busy'])){
+	mysql_query('update task set busy=1, comp=2000000000 where id='.$_GET['busy']);
+
+}
 
 if(isset($_SESSION['login_user'])){
 	
@@ -60,7 +72,9 @@ if(isset($_SESSION['login_user'])){
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+      
     <![endif]-->
+    <script src="js/tooltip.js"></script>
   </head>
 
   <body role="document">
@@ -95,33 +109,47 @@ if(isset($_SESSION['login_user'])){
             <th class="col-lg-4">In Progress</th>
             <th class="col-lg-4">Finished Projects</th>
         </tr>';
-        $html .='<tr><td>';
+        $html .='<tr><td><table class="table">';
         $tsk = mysql_query('select * from task where comp = 2000000000 and busy = 0');
         while($line = mysql_fetch_assoc($tsk)){
             $proj = proIdtoDesc($line['project']);
             if (strlen($proj) > 1)
-                $html .= '<div class="panel panel-default"><div class="panel-body"><span class="label label-danger">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span></div></div>';
+                $html .= '<tr><td><span class="label label-danger" data-toggle="tooltip" data-placement="top" title="'.$line['findings'].'">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span><br>'
+                    . '<a href="kanboard.php?deltc='.$line['id'].'"><button class="btn btn-xs btn-danger">Delete</button></a> '
+                    . '<a href="edit.php?tske='.$line['id'].'"><button class="btn btn-xs btn-warning">Edit</button></a> '
+                    . '<a href="edit.php?fnde='.$line['id'].'"><button class="btn btn-xs btn-info">Description</button></a> '
+                    . '<a href="kanboard.php?busy='.$line['id'].'"><button class="btn btn-xs btn-primary">Start</button></a> '
+                    . '<a href="kanboard.php?dn='.$line['id'].'"><button class="btn btn-xs btn-success">Complete</button></a></td></tr>';
         }  
-            $html .='</td>';
+            $html .='</table></td>';
         
-        $html .='<td>';
+        $html .='<td><table class="table">';
         $tsk = mysql_query('select * from task where comp = 2000000000 and busy = 1');
         while($line = mysql_fetch_assoc($tsk)){
             $proj = proIdtoDesc($line['project']);
             if (strlen($proj) > 1)
-            $html .= '<div class="panel panel-default"><div class="panel-body"><span class="label label-warning">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span></div></div>';
+            $html .= '<tr><td><span class="label label-warning">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span><br>'
+                    . '<a href="kanboard.php?deltc='.$line['id'].'"><button class="btn btn-xs btn-danger">Delete</button></a> '
+                    . '<a href="edit.php?tske='.$line['id'].'"><button class="btn btn-xs btn-warning">Edit</button></a> '
+                    . '<a href="edit.php?fnde='.$line['id'].'"><button class="btn btn-xs btn-info">Description</button></a> '
+                    . '<a href="kanboard.php?dn='.$line['id'].'"><button class="btn btn-xs btn-success">Complete</button></a></td></tr>';
         }  
-            $html .='</td>';
+            $html .='</table></td>';
         
 
-        $html .='<td>';
+        $html .='<td><table class="table">';
         $tsk = mysql_query('select * from task where comp <> 2000000000');
         while($line = mysql_fetch_assoc($tsk)){
             $proj = proIdtoDesc($line['project']);
             if (strlen($proj) > 1)
-            $html .= '<div class="panel panel-default"><div class="panel-body"><span class="label label-success">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span></small></div></div>';
+            $html .= '<tr><td><span class="label label-success">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span><br>'
+                    . '<a href="kanboard.php?deltc='.$line['id'].'"><button class="btn btn-xs btn-danger">Delete</button></a> '
+                    . '<a href="edit.php?tske='.$line['id'].'"><button class="btn btn-xs btn-warning">Edit</button></a> '
+                    . '<a href="edit.php?fnde='.$line['id'].'"><button class="btn btn-xs btn-info">Description</button></a> '
+                    . '<a href="kanboard.php?busy='.$line['id'].'"><button class="btn btn-xs btn-primary">Not Finished</button></a> ';
+
         }  
-            $html .='</td>
+            $html .='</table></td>
                         
         </tr>
     </table>

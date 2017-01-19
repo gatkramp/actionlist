@@ -236,7 +236,7 @@ if(isset($_SESSION['login_user'])){
 						<td ><a href="edit.php?tske='.$task['id'].'"><button type="button" class="btn btn-xs btn-warning">Edit</button></a> ';
 						
 			if (($task['findings'] == 'None'))			
-				$html .= '<a href="edit.php?fnde='.$task['id'].'"><button type="button" class="btn btn-xs btn-info">Add Findings</button></a> ';
+				$html .= '<a href="edit.php?fnde='.$task['id'].'"><button type="button" class="btn btn-xs btn-info">Description</button></a> ';
 				
 			  $html .= nl2br($task['description']);
 			 if ($task['comp'] < 2000000000)
