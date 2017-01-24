@@ -9,9 +9,30 @@ function idtouser($id){
 	return $res['alias'];	
 }
 
+function prettyTime($time){
+    $days = floor($time/(24*60*60));
+    $time = $time - $days*24*60*60;
+    $hours = floor($time/(60*60));
+    $time = $time - $hours*60*60;
+    $min = floor($time/(60));
+    $sec = $time - $min*60;
+    return $days.'d '.$hours.'h '.$min.'m '.$sec.'s';
+    //return $time;
+}
+
 function proIdtoDesc($id){
     $res = mysql_fetch_assoc(mysql_query('select description from project where id='.$id));
     return $res['description'];
+}
+
+if ((isset($_GET['id'])) and (isset($_GET['hours'])) and (isset($_GET['days'])) and (isset($_GET['min']))){
+    $days = $_GET['days'];
+    $hours = $_GET['hours'];
+    $min = $_GET['min'];
+    $days = $days + floor($days/5)*2;
+    $isum = $min*60 + $hours*60*60 + $days*60*60*24 ; 
+    $fu = time()+$isum;
+    mysql_query('update task set fu='.$fu.' where id='.$_GET['id']);
 }
 
 if (isset($_POST['project'])){
@@ -31,6 +52,28 @@ if (isset($_GET['busy'])){
 	mysql_query('update task set busy=1, comp=2000000000 where id='.$_GET['busy']);
 
 }
+
+if (isset($_GET['stop'])){
+	mysql_query('update task set busy=0, comp=2000000000 where id='.$_GET['stop']);
+
+}
+
+if (isset($_GET['up']))
+	{
+		$a = mysql_query('select prio,max(comp) as comp from project inner join task on project.id=task.project where prio < '.$_GET['up'].' group by project.id order by comp desc,prio desc limit 1');
+		$a = mysql_fetch_assoc($a);
+		mysql_query('update project set prio=-1 where prio = '.$_GET['up']);
+		mysql_query('update project set prio='.$_GET['up'].' where prio = '.$a['prio']);
+		mysql_query('update project set prio='.$a['prio'].' where prio = -1');
+	}
+if (isset($_GET['down']))
+	{
+		$a = mysql_query('select prio,max(comp) as comp from project inner join task on project.id=task.project where prio > '.$_GET['down'].' group by project.id order by comp desc,prio limit 1');
+		$a = mysql_fetch_assoc($a);
+		mysql_query('update project set prio=-1 where prio = '.$_GET['down']);
+		mysql_query('update project set prio='.$_GET['down'].' where prio = '.$a['prio']);
+		mysql_query('update project set prio='.$a['prio'].' where prio = -1');	
+	}
 
 if(isset($_SESSION['login_user'])){
 	
@@ -54,7 +97,7 @@ if(isset($_SESSION['login_user'])){
     <meta name="author" content="">
     <link rel="icon" href="../../favicon.ico">
 
-    <title>Theme Template for Bootstrap</title>
+    <title>Actionlist: Kanboard</title>
 
     <!-- Bootstrap core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -103,14 +146,14 @@ if(isset($_SESSION['login_user'])){
       </div>
     </nav>
 
-    <div class="container theme-showcase" role="main">
+    <div class=" theme-showcase" role="main">
     <table class="table table-bordered">
         <tr><th class="col-lg-4">Open Projects</th>
             <th class="col-lg-4">In Progress</th>
             <th class="col-lg-4">Finished Projects</th>
         </tr>';
         $html .='<tr><td><table class="table">';
-        $tsk = mysql_query('select task.id,task.findings,task.description,task.project from task inner join project on task.project=project.id where comp = 2000000000 and busy = 0 order by project.prio');
+        $tsk = mysql_query('select task.id,task.findings,task.description,task.project,project.prio from task inner join project on task.project=project.id where comp = 2000000000 and busy = 0 order by project.prio');
         while($line = mysql_fetch_assoc($tsk)){
             $proj = proIdtoDesc($line['project']);
             if (strlen($proj) > 1)
@@ -119,26 +162,55 @@ if(isset($_SESSION['login_user'])){
                     . '<a href="edit.php?tske='.$line['id'].'"><button class="btn btn-xs btn-warning">Edit</button></a> '
                     . '<a href="edit.php?fnde='.$line['id'].'"><button class="btn btn-xs btn-info">Description</button></a> '
                     . '<a href="kanboard.php?busy='.$line['id'].'"><button class="btn btn-xs btn-primary">Start</button></a> '
-                    . '<a href="kanboard.php?dn='.$line['id'].'"><button class="btn btn-xs btn-success">Complete</button></a></td></tr>';
+                    . '<a href="kanboard.php?dn='.$line['id'].'"><button class="btn btn-xs btn-success">Complete</button></a>'
+                    . '<a href="kanboard.php?up='.$line['prio'].'">
+				<button type="button" class="btn btn-xs btn-default">Up</button></a>
+			<a href="kanboard.php?down='.$line['prio'].'">
+				<button type="button" class="btn btn-xs btn-default">Down</button></a></td></tr>';
         }  
             $html .='</table></td>';
         
         $html .='<td><table class="table">';
-        $tsk = mysql_query('select task.id,task.findings,task.description,task.project from task inner join project on task.project=project.id where  comp = 2000000000 and busy = 1 order by project.prio');
+        $tsk = mysql_query('select task.id,task.findings,task.description,task.project,project.prio,task.fu from task inner join project on task.project=project.id where  comp = 2000000000 and busy = 1 order by task.fu,project.prio');
         while($line = mysql_fetch_assoc($tsk)){
             $proj = proIdtoDesc($line['project']);
-            if (strlen($proj) > 1)
-            $html .= '<tr><td><span class="label label-warning" data-toggle="tooltip" data-placement="top" title="'.$line['findings'].'">'.$line['description'].'</span><br><span class="label label-primary">'.$proj.'</span><br>'
-                    . '<a href="kanboard.php?deltc='.$line['id'].'"><button class="btn btn-xs btn-danger">Delete</button></a> '
+            if (strlen($proj) > 1){
+                $html .= '<tr><td>';
+            if (($line['fu']-time()) > 0){
+                $html .= '<span class="label label-default" data-toggle="tooltip" data-placement="top" title="'.$line['findings'].'">'.$line['description'].'</span><br>';
+                $html .= '<span class="label label-default">'.$proj.'</span> ';
+                $html .=  '<span class="label label-success">Waiting: '.  prettyTime($line['fu']-time()).'</span><br>';
+                $html .= '<a href="kanboard.php?deltc='.$line['id'].'"><button class="btn btn-xs btn-default">Delete</button></a> '
+                    . '<a href="edit.php?tske='.$line['id'].'"><button class="btn btn-xs btn-default">Edit</button></a> '
+                    . '<a href="edit.php?fnde='.$line['id'].'"><button class="btn btn-xs btn-default">Description</button></a> '
+                    . '<a href="kanboard.php?stop='.$line['id'].'"><button class="btn btn-xs btn-default">Stop</button></a> '
+                    . '<a href="kanboard.php?dn='.$line['id'].'"><button class="btn btn-xs btn-default">Complete</button></a>'
+                    . '<a href="add2.php?tsk='.$line['project'].'&id='.$line['id'].'"><button class="btn btn-xs btn-default">+</button></a> '
+                    . '<a href="busy.php?task='.$line['id'].'"><button class="btn btn-xs btn-default">Follow-up</button></a> ';
+            }
+                
+            else {
+                $html .= '<span class="label label-warning" data-toggle="tooltip" data-placement="top" title="'.$line['findings'].'">'.$line['description'].'</span><br>';
+                $html .= '<span class="label label-primary">'.$proj.'</span> ';
+                $html .=  '<span class="label label-danger">Attention Needed</span><br>';
+                $html .= '<a href="kanboard.php?deltc='.$line['id'].'"><button class="btn btn-xs btn-danger">Delete</button></a> '
                     . '<a href="edit.php?tske='.$line['id'].'"><button class="btn btn-xs btn-warning">Edit</button></a> '
                     . '<a href="edit.php?fnde='.$line['id'].'"><button class="btn btn-xs btn-info">Description</button></a> '
-                    . '<a href="kanboard.php?dn='.$line['id'].'"><button class="btn btn-xs btn-success">Complete</button></a></td></tr>';
-        }  
+                    . '<a href="kanboard.php?stop='.$line['id'].'"><button class="btn btn-xs btn-primary">Stop</button></a> '
+                    . '<a href="kanboard.php?dn='.$line['id'].'"><button class="btn btn-xs btn-success">Complete</button></a>'
+                    . '<a href="add2.php?tsk='.$line['project'].'&id='.$line['id'].'"><button class="btn btn-xs btn-success">+</button></a> '
+                    . '<a href="busy.php?task='.$line['id'].'"><button class="btn btn-xs btn-info">Follow-up</button></a> ';
+            }
+             
+            
+                
+            
+        }  }
             $html .='</table></td>';
         
 
         $html .='<td><table class="table">';
-        $tsk = mysql_query('select task.id,task.findings,task.description,task.project,task.comp from task inner join project on task.project=project.id where comp <> 2000000000 order by task.comp desc');
+        $tsk = mysql_query('select task.id,task.findings,task.description,task.project,task.comp from task inner join project on task.project=project.id where comp <> 2000000000  and comp > '.(time()-60*60*24*7).' order by task.comp desc');
         while($line = mysql_fetch_assoc($tsk)){
             $proj = proIdtoDesc($line['project']);
             if (strlen($proj) > 1)

@@ -4,23 +4,28 @@ include('scripts.php');
 dbconn();
 session_start();
 
-if (isset($_POST['prjec'])){
-	mysql_query('update project set description="'.$_POST['prjec'].'" where id ='.$_POST['prjeid']);
-	header("location: index.php");
+function idtouser($id){
+	$res = mysql_fetch_assoc(mysql_query('select alias from login where id='.$id));
+	return $res['alias'];	
 }
 
-if (isset($_POST['tskec'])){
-	mysql_query('update task set description="'.$_POST['tskec'].'", comp=2000000000 where id ='.$_POST['tskeid']);
-	header("location: index.php");
-}
-
-if (isset($_POST['fndec'])){
-	mysql_query('update task set findings="'.$_POST['fndec'].'" where id ='.$_POST['fndeid']);
+if (isset($_POST['project'])){
+        
+	mysql_query('insert into task (project,description,user_id,findings,busy) values ('.$_POST['project'].',"'.$_POST['description'].'",'.$_POST['userid'].',"None",1)');
 	header("location: kanboard.php");
 }
 
+
 if(isset($_SESSION['login_user'])){
 	
+	if (isset($_POST['prjname']))
+	{
+		$a = mysql_fetch_assoc(mysql_query('select max(prio) as prio from project'));
+		mysql_query('insert into project (description,prio) values ("'.$_POST['prjname'].'",'.($a['prio']+1).')');
+		$a = mysql_fetch_assoc(mysql_query('select * from project where prio = "'.($a['prio']+1).'"'));
+		mysql_query('insert into task (project,description,user_id,findings) values ('.$a['id'].',"Initial Task",1,"None")');	
+		header("location: index.php?");
+	}
 	
 	$html = '';
 	$html .= '<!DOCTYPE html>
@@ -71,8 +76,8 @@ if(isset($_SESSION['login_user'])){
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
             <li ><a href="index.php">Home</a></li>
-            <li ><a href="add.php">Add Project</a></li>
-            <li class="active"><a href="kanboard.php">Kanboard</a></li>
+            <li class="active"><a href="add.php">Add Project</a></li>
+            <li><a href="kanboard.php">Kanboard</a></li>
 			<li><a href="logout.php">Logout</a></li>
 
           </ul>
@@ -82,37 +87,32 @@ if(isset($_SESSION['login_user'])){
 
     <div class="container theme-showcase" role="main">';
 	
-	if (isset($_GET['prje'])){
-		$res = mysql_fetch_assoc(mysql_query('select * from project where id = '.$_GET['prje']));
+	if (isset($_GET['tsk'])){
 	$html .= '<div class="jumbotron" align="center">
-        <h1>Edit Project</h1>
-        <form action="edit.php" method="post"><h4>Please type a descriptive name for the project:</h4><br>
-			<input size="80" name="prjec" type="text" value="'.$res['description'].'"></input>
-			<input name="prjeid" type="hidden" value="'.$_GET['prje'].'"></input>
-			<input type="submit"></input>
+        <h1>New Task</h1>';
+        mysql_query('update task set comp='.time().' where id='.$_GET['id']);
+	$ref = mysql_fetch_assoc(mysql_query('select * from project where id='.$_GET['tsk']));
+	$html .= '<h4>For: '.$ref['description'].'</h4>';
+    $html .= '<form action="add2.php" method="post"><br>
+			<h4>Please add a description for the task:</h4>
+			<textarea name="description" cols="100" rows="10"></textarea><br>
+			<br><h4>Who will be responsible for the task?</h4>
+			<select name="userid">
+				<option value="1">Frik van der Merwe</option>
+				<option value="2">Josh Letlhoo</option>
+			</select>
+			<input type="hidden" name="project" value="'.$_GET['tsk'].'">
+			<br><h4>Click on "Submit" when done.</h4><input type="submit"></input>
 		</form>
-		<h4>Click on "Submit" when done.</h4>
+		
       </div>';
-	}
-	if (isset($_GET['tske'])){
-		$res = mysql_fetch_assoc(mysql_query('select * from task where id = '.$_GET['tske']));
+		
+	} else {
+	
 	$html .= '<div class="jumbotron" align="center">
-        <h1>Edit Task</h1>
-        <form action="edit.php" method="post"><h4>Please type a description for the task:</h4><br>
-			<textarea name="tskec" cols="120" rows="20">'.$res['description'].'</textarea><br>
-			<input name="tskeid" type="hidden" value="'.$_GET['tske'].'"></input>
-			<input type="submit"></input>
-		</form>
-		<h4>Click on "Submit" when done.</h4>
-      </div>';
-	}
-	if (isset($_GET['fnde'])){
-		$res = mysql_fetch_assoc(mysql_query('select * from task where id = '.$_GET['fnde']));
-	$html .= '<div class="jumbotron" align="center">
-        <h1>Edit Findings</h1>
-        <form action="edit.php" method="post"><h4>Please type the findings for the task:</h4><br>
-			<textarea name="fndec" cols="120" rows="20">'.$res['findings'].'</textarea><br>
-			<input name="fndeid" type="hidden" value="'.$_GET['fnde'].'"></input>
+        <h1>New Project</h1>
+        <form action="add.php" method="post"><h4>Please type a descriptive name for the project:</h4><br>
+			<input size="80" name="prjname" type="text"></input>
 			<input type="submit"></input>
 		</form>
 		<h4>Click on "Submit" when done.</h4>
