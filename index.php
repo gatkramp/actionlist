@@ -194,7 +194,11 @@ if(isset($_SESSION['login_user'])){
 		if ($project['hidden'] == 1){
 		$html .= '<a href="index.php?show='.$project['id'].'">
 				<button type="button" class="btn btn-xs btn-default">
-					<span class="glyphicon glyphicon-eye-open"></span></button></a> ';
+					<span class="glyphicon glyphicon-eye-open"></span></button></a> 
+                                        <a href="index.php?up='.$project['prio'].'">
+				<button type="button" class="btn btn-xs btn-default">Up</button></a>
+			<a href="index.php?down='.$project['prio'].'">
+				<button type="button" class="btn btn-xs btn-default">Down</button></a> ';
 		} else {
 		$html .= '<a href="index.php?hide='.$project['id'].'">
 				<button type="button" class="btn btn-xs btn-default">
